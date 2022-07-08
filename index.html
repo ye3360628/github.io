@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 user-scalable=no">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript">
+		window._AMapSecurityConfig = {
+			securityJsCode: 'e07b9eacd8bb01f339ba2aeb53c8fff4',
+		}
+	</script>
+    <script
+        src="http://webapi.amap.com/maps?v=1.4.2&key=f5dcc0cb9ef26ec05231fa546c35b941&plugin=AMap.DistrictSearch"></script>
+    <style>
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+
+        .modal {
+            display: none;
+            /* 默认隐藏 */
+            position: fixed;
+            z-index: 199;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            -webkit-animation-name: fadeIn;
+            -webkit-animation-duration: 0.4s;
+            animation-name: fadeIn;
+            animation-duration: 0.4s
+        }
+
+        .bbody {
+            padding: 10px;
+            width: 100%;
+            height: 180px;
+            text-align: center;
+        }
+
+        .bbody img {
+            width: 250px;
+        }
+
+        /* 弹窗内容 */
+        .modal-content {
+            position: fixed;
+            bottom: 0;
+            background-color: #fefefe;
+            width: 100%;
+            -webkit-animation-name: slideIn;
+            -webkit-animation-duration: 0.4s;
+            animation-name: slideIn;
+            animation-duration: 0.4s
+        }
+
+        /* 关闭按钮 */
+        .close {
+            color: white;
+            float: right;
+            font-size: 50px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-header {
+            padding: 2px 16px;
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        .modal-body {
+            padding: 2px 16px;
+        }
+
+        #go_here {
+            color: #67c23a;
+            background: #f0f9eb;
+            border-color: #c2e7b0;
+            margin-bottom: 13px;
+            padding: 6px;
+            font-size: 10px;
+            border-radius: 5px;
+            display: flex;
+    align-items: center;
+    width: 82px;
+
+        }
+
+        .modal-footer {
+            padding: 2px 16px;
+            background-color: #5cb85c;
+            color: white;
+        }
+
+        /* 添加动画 */
+        @-webkit-keyframes slideIn {
+            from {
+                bottom: -300px;
+                opacity: 0
+            }
+
+            to {
+                bottom: 0;
+                opacity: 1
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                bottom: -300px;
+                opacity: 0
+            }
+
+            to {
+                bottom: 0;
+                opacity: 1
+            }
+        }
+
+        @-webkit-keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+    </style>
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="map">
+        <div id="myModal" class="modal">
+
+            <!-- 弹窗内容 -->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="close">&times;</span>
+                    <h2 class="head">弹窗头部</h2>
+                </div>
+                <div class="modal-body bbody">
+                    <img class="bimg" src="" alt="">
+                </div>
+                <div class="modal-body">
+                    <p>点位所属场景：</p>
+                    <p class="body">弹窗文本...</p>
+
+
+                    <span id="go_here"><img style="    margin-right: 5px;"
+                            src="https://s1.ax1x.com/2022/06/30/jMAzw9.png" width="20px" alt="">到这里去</span>
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <h3>工作时间</h3>
+                </div>
+                <div class="modal-body">
+                    <p class="time"></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div>
+
+    </div>
+
+</body>
+<script>
+    var modal = document.getElementById('myModal');
+    var map = new AMap.Map('map', {
+        resizeEnable: true,
+        zoom: 10,
+        center: [105.030923, 30.282847],
+        scrollWheel: true,
+        zoomEnable: true,
+
+    });
+
+    new AMap.DistrictSearch({
+        extensions: 'all',
+        subdistrict: 0
+    }).search('乐至', function (status, result) {
+        // 外多边形坐标数组和内多边形坐标数组
+        var outer = [
+            new AMap.LngLat(-360, 90, true),
+            new AMap.LngLat(-360, -90, true),
+            new AMap.LngLat(360, -90, true),
+            new AMap.LngLat(360, 90, true),
+        ];
+        console.log(result,status)
+        var holes = result.districtList[0].boundaries
+
+        var pathArray = [
+            outer
+        ];
+        pathArray.push.apply(pathArray, holes)
+        var polygon = new AMap.Polygon({
+            pathL: pathArray,
+            strokeColor: '#0000',
+            strokeWeight: 1,
+            fillColor: '#fff',
+            fillOpacity: 1
+        });
+        polygon.setPath(pathArray);
+        map.add(polygon)
+    })
+    var marker1 = new AMap.Marker({
+        position: new AMap.LngLat(104.976979, 30.263563),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker2 = new AMap.Marker({
+        position: new AMap.LngLat(104.877679, 30.313825),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker3 = new AMap.Marker({
+        position: new AMap.LngLat(105.096208, 30.153305),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker4 = new AMap.Marker({
+        position: new AMap.LngLat(105.073292, 30.103625),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker5 = new AMap.Marker({
+        position: new AMap.LngLat(105.074302, 30.327293),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker6 = new AMap.Marker({
+        position: new AMap.LngLat(105.017808, 30.283448),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker7 = new AMap.Marker({
+        position: new AMap.LngLat(105.028077, 30.27673),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker8 = new AMap.Marker({
+        position: new AMap.LngLat(105.024171, 30.28266),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker9 = new AMap.Marker({
+        position: new AMap.LngLat(105.031442, 30.277468),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker10 = new AMap.Marker({
+        position: new AMap.LngLat(105.017919, 30.289405),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker11 = new AMap.Marker({
+        position: new AMap.LngLat(105.02457, 30.288473),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker12 = new AMap.Marker({
+        position: new AMap.LngLat(105.045884, 30.268933),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker13 = new AMap.Marker({
+        position: new AMap.LngLat(104.976901, 30.310647),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '遂资眉高速乐至站出口点位'
+    });
+    var marker14 = new AMap.Marker({
+        position: new AMap.LngLat(104.854592, 30.237534),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝中天高速出口'
+    });
+    var marker15 = new AMap.Marker({
+        position: new AMap.LngLat(105.001434, 30.29534),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker16 = new AMap.Marker({
+        position: new AMap.LngLat(105.029448, 30.289665),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+    var marker17 = new AMap.Marker({
+        position: new AMap.LngLat(105.019692, 30.281811),   // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+        title: '成安渝乐至高速出口'
+    });
+
+    var marker = [marker1, marker2, marker3, marker4, marker5, marker6, marker7, marker8, marker9, marker10, marker11, marker12, marker13, marker14, marker15, marker16, marker17]
+    // 将创建的点标记添加到已有的地图实例：
+    map.add(marker);
+    marker1.on('click', function (e) {
+        $(".head").text("成安渝高速乐至站出口点位")
+        $(".body").text("成安渝高速乐至站出口点位")
+        $(".time").text("24小时")
+        $("#go_here").attr("name", "marker1")
+        // marker1.markOnAMAP({
+        //         name:'首开广场',
+        //         position:marker1.getPosition()
+        //     })
+        $(".modal").show()
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngFmT.jpg")
+    })
+    $("#go_here").on('click', function () {
+        let names = $(this).attr("name")
+        console.log(names)
+        let name1 = $(".body").text()
+        switch (names) {
+            case "marker1":
+                marker1.markOnAMAP({
+                    name: name1,
+                    position: marker1.getPosition()
+                })
+                break;
+            case "marker2":
+                marker2.markOnAMAP({
+                    name: name1,
+                    position: marker2.getPosition()
+                })
+                break;
+            case "marker3":
+                marker3.markOnAMAP({
+                    name: name1,
+                    position: marker3.getPosition()
+                })
+                break;
+            case "marker4":
+                marker4.markOnAMAP({
+                    name: name1,
+                    position: marker4.getPosition()
+                })
+                console.log(123)
+                break;
+            case "marker5":
+                marker5.markOnAMAP({
+                    name: name1,
+                    position: marker5.getPosition()
+                })
+                break;
+            case "marker6":
+                marker6.markOnAMAP({
+                    name: name1,
+                    position: marker6.getPosition()
+                })
+                break;
+            case "marker7":
+                marker7.markOnAMAP({
+                    name: name1,
+                    position: marker7.getPosition()
+                })
+                break;
+            case "marker8":
+                marker8.markOnAMAP({
+                    name: name1,
+                    position: marker8.getPosition()
+                })
+                break;
+            case "marker9":
+                marker9.markOnAMAP({
+                    name: name1,
+                    position: marker9.getPosition()
+                })
+                break;
+            case "marker10":
+                marker10.markOnAMAP({
+                    name: name1,
+                    position: marker10.getPosition()
+                })
+                break;
+            case "marker11":
+                marker11.markOnAMAP({
+                    name: name1,
+                    position: marker11.getPosition()
+                })
+                break;
+            case "marker12":
+                marker12.markOnAMAP({
+                    name: name1,
+                    position: marker12.getPosition()
+                })
+                break;
+            case "marker13":
+                marker13.markOnAMAP({
+                    name: name1,
+                    position: marker13.getPosition()
+                })
+                break;
+            case "marker14":
+                marker14.markOnAMAP({
+                    name: name1,
+                    position: marker14.getPosition()
+                })
+                break;
+            case "marker15":
+                marker15.markOnAMAP({
+                    name: name1,
+                    position: marker15.getPosition()
+                })
+                break;
+            case "marker16":
+                marker16.markOnAMAP({
+                    name: name1,
+                    position: marker16.getPosition()
+                })
+                break;
+            case "marker17":
+                marker17.markOnAMAP({
+                    name: name1,
+                    position: marker17.getPosition()
+                })
+                break;
+
+        }
+
+    })
+    marker2.on('click', function (e) {
+        $(".head").text("成安渝高速高寺站出口点位")
+        $(".body").text("成安渝高速高寺站出口点位")
+        $(".time").text("24小时")
+        $(".modal").show()
+        $("#go_here").attr("name", "marker2")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngA7F.jpg")
+    })
+    marker3.on('click', function (e) {
+        $(".head").text("成安渝高速石湍站出口点位")
+        $(".body").text("成安渝高速石湍站出口点位")
+        $(".time").text("24小时")
+        $("#go_here").attr("name", "marker3")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngVk4.jpg")
+        $(".modal").show()
+    })
+    marker4.on('click', function (e) {
+        $(".head").text("成资渝高速通旅站出口点位")
+        $(".body").text("成资渝高速通旅站出口点位")
+        $(".time").text("24小时")
+        $("#go_here").attr("name", "marker4")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngu11.jpg")
+        $(".modal").show()
+    })
+    marker5.on('click', function (e) {
+        $(".head").text("遂资眉高速龙门站出口点位")
+        $(".body").text("遂资眉高速龙门站出口点位")
+        $(".time").text("24小时")
+        $("#go_here").attr("name", "marker5")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngk0U.jpg")
+        $(".modal").show()
+    })
+    marker6.on('click', function (e) {
+        $(".head").text("乐至县仙鹤大道")
+        $(".body").text("乐至县陈毅广场")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker6")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jncxYj.jpg")
+        $(".modal").show()
+    })
+    marker7.on('click', function (e) {
+        $(".head").text("乐至县天池镇公园路")
+        $(".body").text("乐至县天池镇公园点位")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker7")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngppn.jpg")
+        $(".modal").show()
+    })
+    marker8.on('click', function (e) {
+        $(".head").text("乐至县天池镇钟鼓楼巷2号")
+        $(".body").text("乐至县北门车站点位")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker8")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngC60.jpg")
+        $(".modal").show()
+    })
+    marker9.on('click', function (e) {
+        $(".head").text("乐至县川鄂东路")
+        $(".body").text("乐至县60车队点位")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker9")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jncvkQ.jpg")
+        $(".modal").show()
+    })
+    marker10.on('click', function (e) {
+        $(".head").text("乐至县天颐新区医院")
+        $(".body").text("乐至天颐新区医院原检尽检点位")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker10")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngeh9.jpg")
+        $(".modal").show()
+    })
+    marker11.on('click', function (e) {
+        $(".head").text("乐至县和信医院")
+        $(".body").text("乐至和信医院原检尽检点位")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker11")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngPXV.jpg")
+        $(".modal").show()
+    })
+    marker12.on('click', function (e) {
+        $(".head").text("乐至县上好医院")
+        $(".body").text("乐至上好医院原检尽检点位")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $("#go_here").attr("name", "marker12")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngZtJ.jpg")
+        $(".modal").show()
+    })
+    marker13.on('click', function (e) {
+        $(".head").text("遂资眉高速乐至站出口点位")
+        $(".body").text("遂资眉高速乐至站出口点位")
+        $("#go_here").attr("name", "marker13")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngnpR.jpg")
+        $(".time").text("24小时")
+        $(".modal").show()
+    })
+    marker14.on('click', function (e) {
+        $(".head").text("遂资眉高速中天站出口点位")
+        $(".body").text("遂资眉高速中天站出口点位")
+        $("#go_here").attr("name", "marker14")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jnglnK.jpg")
+        $(".time").text("24小时")
+        $(".modal").show()
+    })
+    marker15.on('click', function (e) {
+        $(".head").text("乐至县人民医院")
+        $(".body").text("乐至县人民医院原检尽检点位")
+        $("#go_here").attr("name", "marker15")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngMX6.jpg")
+        $(".time").text("24小时")
+        $(".modal").show()
+    })
+    marker16.on('click', function (e) {
+        $(".head").text("乐至县中医医院")
+        $(".body").text("乐至县中医医院原检尽检点位")
+        $("#go_here").attr("name", "marker16")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jngK6x.jpg")
+        $(".time").text("24小时")
+        $(".modal").show()
+    })
+    marker17.on('click', function (e) {
+        $(".head").text("乐至县南塔社区卫生服务中心")
+        $(".body").text("乐至县南塔社区卫生服务中心原检尽检点位")
+        $("#go_here").attr("name", "marker1")
+        $(".bimg").attr("src", "https://s1.ax1x.com/2022/06/29/jng9lq.jpg")
+        $(".time").text("8:30-12:00  2:30-18:00")
+        $(".modal").show()
+    })
+    $(".close").click(function () {
+        $(".modal").hide()
+    })
+
+</script>
+
+</html>
